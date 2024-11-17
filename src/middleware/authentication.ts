@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { TokenType, verifyToken } from "../service/tokenService.js";
+import { TokenType, verifyToken } from "../services/tokenService.js";
 
 export const authenticationMiddleware = (
   req: Request,

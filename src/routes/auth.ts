@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import User from "../model/user.js";
+import User from "../models/user.js";
 import { z } from "zod";
 import { hash, verify } from "argon2";
 
@@ -8,7 +8,7 @@ import {
   generateAccessToken,
   verifyToken,
   TokenType,
-} from "../service/tokenService.js";
+} from "../services/tokenService.js";
 
 const authRouter: Router = Router();
 

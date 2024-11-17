@@ -71,12 +71,10 @@ Before starting, ensure you have the following installed:
 NodeAuth/
 │
 ├── src/                 # Main source code
-│   ├── controllers/     # Request handlers
 │   ├── middleware/      # Middleware functions
 │   ├── models/          # Database models
 │   ├── routes/          # Application routes
-│   ├── services/        # Business logic services
-│   └── utils/           # Helper functions
+│   └── services/        
 │
 ├── .env.example         # Environment variable template
 ├── package.json         # Project metadata and dependencies

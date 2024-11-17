@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { authenticationMiddleware } from "../middleware/authentication.js";
-import User from "../model/user.js";
+import User from "../models/user.js";
 
 const userRouter: Router = Router();
 
