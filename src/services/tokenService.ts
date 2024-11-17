@@ -5,12 +5,14 @@ configDotenv();
 
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET!;
 const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET!;
+const emailTokenSecret = process.env.EMAIL_TOKEN_SECRET!;
 const accessTokenExpiry = process.env.ACCESS_TOKEN_VALIDITY;
 const refreshTokenExpiry = process.env.REFRESH_TOKEN_VALIDITY;
 
 export enum TokenType {
   Access = "access",
   Refresh = "refresh",
+  Email = "email",
 }
 
 interface TokenVerificationResult {
@@ -30,6 +32,12 @@ export const generateRefreshToken = (payload: object): string => {
   });
 };
 
+export const generateEmailToken = (payload: object): string => {
+  return jwt.sign({ type: "email", ...payload }, emailTokenSecret, {
+    expiresIn: "10d",
+  });
+};
+
 export const verifyToken = (
   token: string,
   type: TokenType
@@ -42,6 +50,9 @@ export const verifyToken = (
         break;
       case TokenType.Refresh:
         secret = refreshTokenSecret;
+        break;
+      case TokenType.Email:
+        secret = emailTokenSecret;
         break;
       default:
         throw new Error("Invalid token type");
