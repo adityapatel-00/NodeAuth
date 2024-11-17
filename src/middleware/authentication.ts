@@ -1,12 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { TokenType, verifyToken } from "../services/tokenService.js";
+import User from "../models/user.js";
+import { authSchema } from "../services/validationService.js";
 
-export const authenticationMiddleware = (
+export const authenticationMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     res.status(401).json({ message: "Unauthorized", code: "INVALID_TOKEN" });
@@ -19,6 +21,22 @@ export const authenticationMiddleware = (
     const result = verifyToken(token, TokenType.Access);
     if (result.error) {
       throw result.error;
+    }
+    const { success, data } = authSchema.safeParse({
+      email: result.payload?.email,
+    });
+    if (!success) {
+      res.status(400).json({
+        message: "Invalid Email",
+      });
+      return;
+    }
+    const userExists = await User.findOne({ email: data.email });
+    if (!userExists) {
+      res.status(401).json({
+        message: "Unauthorized",
+      });
+      return;
     }
     res.locals.email = result.payload?.email;
     next();

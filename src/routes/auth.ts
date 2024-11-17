@@ -1,9 +1,5 @@
 import { Router, Request, Response } from "express";
-import { z } from "zod";
 import { hash, verify } from "argon2";
-import { configDotenv } from "dotenv";
-import { createTransport } from "nodemailer";
-import { log } from "console";
 import jwt from "jsonwebtoken";
 
 import User from "../models/user.js";
@@ -12,95 +8,18 @@ import {
   generateAccessToken,
   verifyToken,
   TokenType,
-  generateEmailToken,
 } from "../services/tokenService.js";
-
-configDotenv();
-
-const emailHost = process.env.HOST!;
-const emailPort = Number(process.env.PORT!);
-const emailUser = process.env.USER!;
-const emailPass = process.env.PASS!;
-
-const appBaseURL = process.env.BASE_URL!;
+import {
+  authSchema,
+  loginSchema,
+  signUpSchema,
+} from "../services/validationService.js";
+import sendVerificationEmail from "../services/emailService.js";
 
 const authRouter: Router = Router();
 
-const signUpSchema = z.object({
-  firstName: z.string().min(3).max(255),
-  lastName: z.string().min(3).max(255),
-  email: z.string().email(),
-  password: z
-    .string()
-    .min(8)
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(
-      /[@$*?&]/,
-      "Password must contain at least one special character (@, $, *, ?, &)"
-    ),
-  phoneNumber: z
-    .string()
-    .regex(
-      /^[6-9]\d{9}$/,
-      "Phone number must be a valid number (starting with 6, 7, 8, or 9)"
-    ),
-});
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
-});
-
 const hashPassword = async (password: string): Promise<string> => {
   return await hash(password);
-};
-
-const createTransporter = () => {
-  try {
-    const transporter = createTransport({
-      host: emailHost,
-      port: emailPort,
-      secure: true,
-      auth: {
-        user: emailUser,
-        pass: emailPass,
-      },
-    });
-
-    log("Email transporter initialized successfully!");
-
-    return transporter;
-  } catch (error) {
-    log(error);
-  }
-};
-
-const transporter = createTransporter();
-
-const sendVerificationEmail = (targetEmail: string) => {
-  const token = generateEmailToken({ email: targetEmail });
-  const verificationLink = `${process.env.BASE_URL}/auth/verify/${token}`;
-  const htmlContent = `
-    <html>
-      <body>
-        <h1>Verify Your Email</h1>
-        <p>This link will be valid for 10 days post issuing<p>
-        <p>Click the link below to verify your email:</p>
-        <a href="${verificationLink}">Verify Email</a>
-        <p>If you cannot click the link, copy and paste this URL into your browser:</p>
-        <p>${verificationLink}</p>
-      </body>
-    </html>
-  `;
-
-  transporter?.sendMail({
-    from: emailUser,
-    to: targetEmail,
-    subject: "Email Verification",
-    html: htmlContent,
-  });
 };
 
 authRouter.post(
@@ -184,6 +103,7 @@ authRouter.post(
       if (!user.isVerified) {
         res.status(401).json({
           message: "User is not verified",
+          code: "NOT_VERIFIED",
         });
         return;
       }
@@ -262,6 +182,12 @@ authRouter.get("/verify/:token", async (req: Request, res: Response) => {
       });
       return;
     }
+    if (user.isVerified) {
+      res.status(400).json({
+        message: "User already verified!",
+      });
+      return;
+    }
 
     await User.updateOne({ email }, { isVerified: true });
 
@@ -280,6 +206,34 @@ authRouter.get("/verify/:token", async (req: Request, res: Response) => {
     }
     res.status(500).json({
       message: "Something went Wrong",
+    });
+  }
+});
+
+authRouter.get("/email-verification", async (req: Request, res: Response) => {
+  try {
+    const { success, data } = authSchema.safeParse(req.body);
+    if (!success) {
+      res.status(400).json({
+        message: "Invalid Email",
+      });
+      return;
+    }
+
+    const userExists = User.findOne({ email: data.email });
+    if (!userExists) {
+      res.status(404).json({
+        message: "User not found",
+      });
+      return;
+    }
+    sendVerificationEmail(data.email);
+    res.status(200).json({
+      message: "Verification email sent!",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Something went wrong. Try again!",
     });
   }
 });
