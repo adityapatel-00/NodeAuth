@@ -90,9 +90,12 @@ Before starting the server, you need to configure your environment variables. Th
 
 ## Initializing the Database
 
-To initialize the database, run the following steps to set up the necessary tables:
+Before migrating your schema, ensure you modify the `schema.prisma` file to match your database type.
 
-1. **Generate Prisma client**:
+1. **Make required changes to `schema.prisma`**:
+   - Modify the `schema.prisma` file to match your database configuration. If you're using a **NoSQL database** (e.g., MongoDB), or a **relational database** (e.g., PostgreSQL), you'll need to adjust your model definitions accordingly.
+
+2. **Generate Prisma client**:
 
    This generates the Prisma client for your database.
 
@@ -100,17 +103,21 @@ To initialize the database, run the following steps to set up the necessary tabl
    npx prisma generate
    ```
 
-2. **Run database migrations**:
+3. **Migrate the schema**:
 
-   Apply migrations to create the necessary tables (like `users`) in your database.
+   - For **NoSQL databases** like MongoDB, run:
+     ```bash
+     npx prisma db push
+     ```
 
-   ```bash
-   npx prisma migrate dev
-   ```
+   - For **Relational databases** like PostgreSQL, run:
+     ```bash
+     npx prisma migrate dev
+     ```
 
-   This will create the database tables defined in your `prisma/schema.prisma` file. Ensure that your database connection string in `.env` is correctly configured.
+   After running the appropriate command, Prisma will sync your schema to the database, creating the necessary tables or collections based on the models defined in `schema.prisma`.
 
-3. **Check the database**:
+4. **Check the database**:
 
    After running the migration, verify that the necessary tables (e.g., `users`) have been created in your database.
 
