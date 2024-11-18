@@ -13,6 +13,7 @@ userRouter.get("/info", async (req: Request, res: Response): Promise<void> => {
     const user = await User.findOne({ email });
 
     res.status(200).json({
+      message: "Details fetched successfully",
       data: {
         firstName: user?.firstName,
         lastName: user?.lastName,

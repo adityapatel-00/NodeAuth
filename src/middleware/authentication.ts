@@ -31,8 +31,8 @@ export const authenticationMiddleware = async (
       });
       return;
     }
-    const userExists = await User.findOne({ email: data.email });
-    if (!userExists) {
+    const existingUser = await User.findOne({ email: data.email });
+    if (!existingUser) {
       res.status(401).json({
         message: "Unauthorized",
       });

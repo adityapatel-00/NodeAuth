@@ -6,7 +6,7 @@ const signUpSchema = z.object({
   email: z.string().email(),
   password: z
     .string()
-    .min(8)
+    .min(8, "Password must be atleast 8 characters long")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[0-9]/, "Password must contain at least one number")
@@ -17,8 +17,8 @@ const signUpSchema = z.object({
   phoneNumber: z
     .string()
     .regex(
-      /^[6-9]\d{9}$/,
-      "Phone number must be a valid number (starting with 6, 7, 8, or 9)"
+      /^(?:\+?[1-9]\d{1,4}[-.\s]?)?(?:[(]\d{1,3}[)][-.\s]?)?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/,
+      "Phone number must be a valid international or local number"
     ),
 });
 

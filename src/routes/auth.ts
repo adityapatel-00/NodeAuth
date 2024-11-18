@@ -25,16 +25,17 @@ const hashPassword = async (password: string): Promise<string> => {
 authRouter.post(
   "/signup",
   async (req: Request, res: Response): Promise<void> => {
-    const { firstName, lastName, email, password, phoneNumber } = req.body;
     try {
-      const signUpValidation = signUpSchema.safeParse(req.body);
-      if (!signUpValidation.success) {
+      const { success, data, error } = signUpSchema.safeParse(req.body);
+      if (!success) {
         res.status(400).json({
-          message: "Validation failed",
-          errors: signUpValidation.error.errors.map((err) => err.message),
+          message: "Please provide valid information.",
+          errors: error.errors.map((err) => err.message),
         });
         return;
       }
+
+      const { firstName, lastName, email, password, phoneNumber } = data;
 
       const existingUser = await User.findOne({ email });
       if (existingUser) {
@@ -73,26 +74,26 @@ authRouter.post(
   "/login",
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const loginValidation = loginSchema.safeParse(req.body);
-      if (!loginValidation.success) {
+      const { success, data, error } = loginSchema.safeParse(req.body);
+      if (!success) {
         res.status(400).json({
-          message: "Validation failed",
-          errors: loginValidation.error.errors,
+          message: "Please provide valid data",
+          errors: error.errors,
         });
         return;
       }
 
-      const { email, password } = req.body;
+      const { email, password } = data;
 
-      const user = await User.findOne({ email });
-      if (!user) {
+      const existingUser = await User.findOne({ email });
+      if (!existingUser) {
         res.status(404).json({
           message: "User doesn't exist",
         });
         return;
       }
 
-      const isPasswordValid = await verify(user.password, password);
+      const isPasswordValid = await verify(existingUser.password, password);
       if (!isPasswordValid) {
         res.status(401).json({
           message: "Invalid credentials",
@@ -100,9 +101,9 @@ authRouter.post(
         return;
       }
 
-      if (!user.isVerified) {
+      if (!existingUser.isVerified) {
         res.status(401).json({
-          message: "User is not verified",
+          message: "User not verified",
           code: "NOT_VERIFIED",
         });
         return;
@@ -131,15 +132,15 @@ authRouter.get("/refresh-token", async (req: Request, res: Response) => {
     const refreshToken = req.body.refreshToken;
     if (!refreshToken) {
       res.status(400).json({
-        message: "Invalid token",
+        message: "Unauthorized",
       });
       return;
     }
     const result = verifyToken(refreshToken, TokenType.Refresh);
     const email = result.payload?.email;
 
-    const user = User.findOne({ email: email });
-    if (!user) {
+    const existingUser = User.findOne({ email: email });
+    if (!existingUser) {
       res.status(401).json({
         message: "User doesn't exist",
       });
@@ -163,7 +164,7 @@ authRouter.get("/verify/:token", async (req: Request, res: Response) => {
     const token = req.params.token;
     if (!token) {
       res.status(400).json({
-        message: "Invalid token",
+        message: "Unauthorized",
       });
       return;
     }
@@ -173,16 +174,14 @@ authRouter.get("/verify/:token", async (req: Request, res: Response) => {
     }
     const email = result.payload?.email;
 
-    console.log(email);
-
-    const user = await User.findOne({ email });
-    if (!user) {
+    const existingUser = await User.findOne({ email });
+    if (!existingUser) {
       res.status(404).json({
-        message: "User not found",
+        message: "User doesn't exist",
       });
       return;
     }
-    if (user.isVerified) {
+    if (existingUser.isVerified) {
       res.status(400).json({
         message: "User already verified!",
       });
@@ -220,10 +219,10 @@ authRouter.get("/email-verification", async (req: Request, res: Response) => {
       return;
     }
 
-    const userExists = User.findOne({ email: data.email });
-    if (!userExists) {
+    const existingUser = User.findOne({ email: data.email });
+    if (!existingUser) {
       res.status(404).json({
-        message: "User not found",
+        message: "User doesn't exist",
       });
       return;
     }
