@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { authenticationMiddleware } from "../middleware/authentication.js";
-import User from "../models/user.js";
+import { prismaClient } from "../utils/db.js";
 
 const userRouter: Router = Router();
 
@@ -10,7 +10,11 @@ userRouter.get("/info", async (req: Request, res: Response): Promise<void> => {
   try {
     const email = res.locals?.email;
 
-    const user = await User.findOne({ email });
+    const user = await prismaClient.user.findUnique({
+      where: {
+        email,
+      },
+    });
 
     res.status(200).json({
       message: "Details fetched successfully",

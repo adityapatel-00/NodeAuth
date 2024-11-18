@@ -36,7 +36,7 @@ const transporter = createTransporter();
 
 const sendVerificationEmail = (targetEmail: string) => {
   const token = generateEmailToken({ email: targetEmail });
-  const verificationLink = `${appBaseURL}/auth/verify/${token}`;
+  const verificationLink = `${appBaseURL}/auth/verification/${token}`;
   const htmlContent = `
       <!DOCTYPE html>
       <html>

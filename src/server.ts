@@ -1,6 +1,6 @@
 import { configDotenv } from "dotenv";
 import express, { Request, Response } from "express";
-import connectDB from "./utils/db.js";
+import { connectDB } from "./utils/db.js";
 import authRouter from "./routes/auth.js";
 import userRouter from "./routes/user.js";
 
@@ -9,7 +9,7 @@ configDotenv();
 const app = express();
 app.use(express.json());
 
-connectDB();
+await connectDB();
 
 app.get("/api/v1", (req: Request, res: Response): void => {
   res.json({ message: "Welcome to Authentication by Aditya" });

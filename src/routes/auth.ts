@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { hash, verify } from "argon2";
 import jwt from "jsonwebtoken";
 
-import User from "../models/user.js";
+import { prismaClient } from "../utils/db.js";
 import {
   generateRefreshToken,
   generateAccessToken,
@@ -37,7 +37,11 @@ authRouter.post(
 
       const { firstName, lastName, email, password, phoneNumber } = data;
 
-      const existingUser = await User.findOne({ email });
+      const existingUser = await prismaClient.user.findUnique({
+        where: {
+          email,
+        },
+      });
       if (existingUser) {
         res.status(400).json({
           message: "Email already exists!",
@@ -47,15 +51,15 @@ authRouter.post(
 
       const hashedPassword = await hashPassword(password);
 
-      const newUser = new User({
-        firstName,
-        lastName,
-        email,
-        password: hashedPassword,
-        phoneNumber,
+      await prismaClient.user.create({
+        data: {
+          firstName,
+          lastName,
+          email,
+          password: hashedPassword,
+          phoneNumber,
+        },
       });
-
-      await newUser.save();
 
       sendVerificationEmail(email);
 
@@ -85,7 +89,11 @@ authRouter.post(
 
       const { email, password } = data;
 
-      const existingUser = await User.findOne({ email });
+      const existingUser = await prismaClient.user.findUnique({
+        where: {
+          email,
+        },
+      });
       if (!existingUser) {
         res.status(404).json({
           message: "User doesn't exist",
@@ -112,6 +120,15 @@ authRouter.post(
       const accessToken = generateAccessToken({ email });
       const refreshToken = generateRefreshToken({ email });
 
+      await prismaClient.user.update({
+        data: {
+          lastLogin: new Date(),
+        },
+        where: {
+          email,
+        },
+      });
+
       res.status(200).json({
         message: "Login successful",
         data: {
@@ -137,11 +154,18 @@ authRouter.get("/refresh-token", async (req: Request, res: Response) => {
       return;
     }
     const result = verifyToken(refreshToken, TokenType.Refresh);
+    if (result.error) {
+      throw result.error;
+    }
     const email = result.payload?.email;
 
-    const existingUser = User.findOne({ email: email });
+    const existingUser = await prismaClient.user.findUnique({
+      where: {
+        email,
+      },
+    });
     if (!existingUser) {
-      res.status(401).json({
+      res.status(404).json({
         message: "User doesn't exist",
       });
       return;
@@ -153,13 +177,18 @@ authRouter.get("/refresh-token", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Something went wrong. Try again!",
-    });
+    if (error instanceof jwt.TokenExpiredError) {
+      res.status(401).json({ message: "Login again", code: "LOGIN_EXPIRED" });
+      return;
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      res.status(401).json({ message: "Invalid token", code: "INVALID_TOKEN" });
+      return;
+    }
+    res.status(500).json({ message: "Authentication failed" });
   }
 });
 
-authRouter.get("/verify/:token", async (req: Request, res: Response) => {
+authRouter.post("/verification/:token", async (req: Request, res: Response) => {
   try {
     const token = req.params.token;
     if (!token) {
@@ -174,7 +203,11 @@ authRouter.get("/verify/:token", async (req: Request, res: Response) => {
     }
     const email = result.payload?.email;
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await prismaClient.user.findUnique({
+      where: {
+        email,
+      },
+    });
     if (!existingUser) {
       res.status(404).json({
         message: "User doesn't exist",
@@ -188,7 +221,14 @@ authRouter.get("/verify/:token", async (req: Request, res: Response) => {
       return;
     }
 
-    await User.updateOne({ email }, { isVerified: true });
+    await prismaClient.user.update({
+      data: {
+        isVerified: true,
+      },
+      where: {
+        email,
+      },
+    });
 
     res.status(200).json({
       message: "Verified Successfully!",
@@ -209,7 +249,7 @@ authRouter.get("/verify/:token", async (req: Request, res: Response) => {
   }
 });
 
-authRouter.get("/email-verification", async (req: Request, res: Response) => {
+authRouter.post("/verification", async (req: Request, res: Response) => {
   try {
     const { success, data } = authSchema.safeParse(req.body);
     if (!success) {
@@ -219,10 +259,20 @@ authRouter.get("/email-verification", async (req: Request, res: Response) => {
       return;
     }
 
-    const existingUser = User.findOne({ email: data.email });
+    const existingUser = await prismaClient.user.findUnique({
+      where: {
+        email: data.email,
+      },
+    });
     if (!existingUser) {
       res.status(404).json({
         message: "User doesn't exist",
+      });
+      return;
+    }
+    if (existingUser.isVerified) {
+      res.status(400).json({
+        message: "User already verified!",
       });
       return;
     }

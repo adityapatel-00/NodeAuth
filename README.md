@@ -43,12 +43,8 @@ Before starting, ensure you have the following installed:
 
 3. Set up the environment variables:
 
+   - Create `.env` in the root folder.
    - Copy `.env.example` to `.env`:
-
-     ```bash
-     cp .env.example .env
-     ```
-
    - Update `.env` with your configurations (e.g., secret keys, email service credentials).
 
 4. Build the project:
@@ -65,21 +61,38 @@ Before starting, ensure you have the following installed:
 
 ---
 
+## Customization and Usage
+
+For detailed instructions on how to use and customize this template, please refer to the [USAGE.md](USAGE.md) file.
+
+---
+
+## Contributing
+
+We welcome contributions! If you'd like to contribute to the development of this project, please follow the guidelines provided in the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+
+---
+
 ## Folder Structure
 
 ```
 NodeAuth/
 │
+├── prisma/
+│   ├── schema.prisma     # Schema for Application
+│   └── migrations/       # .sql files for migrations 
+│
 ├── src/                 # Main source code
 │   ├── middleware/      # Middleware functions
-│   ├── models/          # Database models
 │   ├── routes/          # Application routes
 │   └── services/        
 │
 ├── .env.example         # Environment variable template
 ├── package.json         # Project metadata and dependencies
 ├── tsconfig.json        # TypeScript configuration
-└── README.md            # Project documentation
+├── README.md            # Project documentation
+├── USAGE.md             # Usage guide for developers
+└── CONTRIBUTING.md      # Contribution guidelines
 ```
 
 ---
@@ -90,12 +103,6 @@ Here are the npm scripts available in this project:
 
 - `npm run build` - Compiles TypeScript to JavaScript.
 - `npm start` - Starts the compiled app.
-
----
-
-## Contributing
-
-Contributions, issues, and feature requests are welcome! Feel free to open a PR or file an issue.
 
 ---
 
@@ -112,5 +119,3 @@ For any inquiries or support, please reach out to:
 - **Author Name**: Aditya Surishetti
 - **Email**: adityasurishetti@gmail.com
 - **GitHub**: [adityapatel-00](https://github.com/adityapatel-00)
-
-Let me know if you need any further edits!
