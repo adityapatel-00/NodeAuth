@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres" // Change to "postgres" for Postgres
+  url      = env("DATABASE_URL")
+}
+
+// User model with support for both SQL and NoSQL databases
+model User {
+  // For MongoDB
+  // id String @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // For PostgreSQL and other SQL databases
+  id String @id @default(uuid())
+
+  // Personal Information
+  firstName   String
+  lastName    String
+  email       String   @unique
+  password    String
+  phoneNumber String
+
+  // Account Status
+  isVerified  Boolean  @default(false)
+  lastLogin       DateTime?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("users")
+}

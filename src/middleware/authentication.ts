@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { TokenType, verifyToken } from "../services/tokenService.js";
-import User from "../models/user.js";
 import { authSchema } from "../services/validationService.js";
+import { prismaClient } from "../utils/db.js";
 
 export const authenticationMiddleware = async (
   req: Request,
@@ -31,7 +31,11 @@ export const authenticationMiddleware = async (
       });
       return;
     }
-    const existingUser = await User.findOne({ email: data.email });
+    const existingUser = await prismaClient.user.findUnique({
+      where: {
+        email: data.email,
+      },
+    });
     if (!existingUser) {
       res.status(401).json({
         message: "Unauthorized",
